@@ -1,15 +1,13 @@
 #include "/home/elias/cprojects/lidarCode/include/kdtree.h"
 
-struct Node* initNode(float x, float y, float z, struct Node *p, struct Node *lc, struct Node *rc){
+struct Node* initNode(Point* coords, struct Node *p, struct Node *lc, struct Node *rc){
     
     struct Node *n = malloc(sizeof(struct Node));
     if (!n) {
         fprintf(stderr, "Memory allocation failed for Node\n");
         exit(EXIT_FAILURE);
     }
-    n->x = x;
-    n->y = y;
-    n->z = z;
+    n->coords = coords;
     n->parent = p;
     n->leftChild = lc;
     n->rightChild = rc;
@@ -17,7 +15,7 @@ struct Node* initNode(float x, float y, float z, struct Node *p, struct Node *lc
     return n;
 }
 
-struct tree* initTree(){
+struct Tree* initTree(){
     struct Tree* t = malloc(sizeof(struct Tree));
     if (!t) {
         fprintf(stderr, "Memory allocation failed for Node\n");
@@ -42,7 +40,7 @@ void tree_insert(struct Tree* t, struct Node* n){
     while (next != NULL){
         pos = next;
         if (i%3 == 0){
-            if (pos->x > n->x){
+            if (pos->coords->x > n->coords->x){
                 next = pos->leftChild;
                 dir = -1;
             }
@@ -52,7 +50,7 @@ void tree_insert(struct Tree* t, struct Node* n){
             }
         }
         else if (i%3 == 1){
-            if (pos->y > n->y){
+            if (pos->coords->y > n->coords->y){
                 next = pos->leftChild;
                 dir = -1;
             }
@@ -62,7 +60,7 @@ void tree_insert(struct Tree* t, struct Node* n){
             }
         }
         else{
-            if (pos->z > n->z){
+            if (pos->coords->z > n->coords->z){
                 next = pos->leftChild;
                 dir = -1;
             }
