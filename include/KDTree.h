@@ -5,11 +5,14 @@
 #include <stdlib.h>
 #include <math.h>
 
-struct Node {
+typedef struct {
     float x;
     float y;
     float z;
+} Point;
 
+struct Node {
+    Point* coords;
     struct Node *parent;
     struct Node *leftChild;
     struct Node *rightChild;
@@ -20,13 +23,13 @@ struct Tree {
     int nNodes;
 };
 
-struct Node* initNode(float x, float y, float z,
+struct Node* initNode(Point* coords,
               struct Node *p,
               struct Node *lc,
               struct Node *rc);
 
-struct tree* initTree(void);
+struct Tree* initTree(void);
 
-void tree_insert(struct tree* t, struct Node* n);
+void tree_insert(struct Tree* t, struct Node* n);
 
 #endif
