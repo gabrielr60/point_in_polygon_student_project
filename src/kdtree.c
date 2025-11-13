@@ -1,4 +1,4 @@
-#include "/home/elias/cprojects/lidarCode/include/kdtree.h"
+#include "kdtree.h"
 
 struct Node* initNode(Point* coords, struct Node *p, struct Node *lc, struct Node *rc){
     
@@ -83,5 +83,9 @@ void tree_insert(struct Tree* t, struct Node* n){
     t->nNodes++;
     
     return;
+
+}
+
+void pClosest(MaxHeap* topp, struct Tree * t, struct Node* start, Point *q, int p, int i){
 
 }
