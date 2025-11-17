@@ -28,6 +28,6 @@ struct Tree* initTree(void);
 
 void tree_insert(struct Tree* t, struct Node* n);
 
-void pClosest(MaxHeap* topp, struct Tree * t, struct Node* start, Point *q, int p, int i);
+void pClosest(MaxHeap* closest, struct Node* start, Point *q, int i);
 
 #endif

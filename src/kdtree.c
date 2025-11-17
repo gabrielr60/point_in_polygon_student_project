@@ -86,6 +86,133 @@ void tree_insert(struct Tree* t, struct Node* n){
 
 }
 
-void pClosest(MaxHeap* topp, struct Tree * t, struct Node* start, Point *q, int p, int i){
+/*
 
+void pClosest(MaxHeap* closest, struct Node* start, Point *q, int i){
+
+    if (start == NULL){
+        return;
+    }
+
+    float d = distSquared(q, start->coords);
+
+    if(closest->size < closest->capacity){
+        heap_insert(closest, d, start->coords);
+    }
+
+    else if(d < closest->data[0].dist){
+        heap_insert(closest, d, start->coords);
+    }
+
+    if (i==0){
+
+        if (q->x < start->coords->x){
+            
+            pClosest(closest, start->leftChild, q, (i+1)%3);
+
+            if ((q->x - start->coords->x)*(q->x - start->coords->x) < closest->data[0].dist){
+                pClosest(closest, start->rightChild, q, (i+1)%3);
+            }
+
+        }
+
+        else{
+
+            pClosest(closest, start->rightChild, q, (i+1)%3);
+
+            if ((q->x - start->coords->x)*(q->x - start->coords->x) < closest->data[0].dist){
+                pClosest(closest, start->leftChild, q, (i+1)%3);
+            }
+
+        }
+
+    }
+
+    if (i==1){
+
+        if (q->y < start->coords->y){
+            
+            pClosest(closest, start->leftChild, q, (i+1)%3);
+
+            if ((q->y - start->coords->y)*(q->y - start->coords->y) < closest->data[0].dist){
+                pClosest(closest, start->rightChild, q, (i+1)%3);
+            }
+
+        }
+
+        else{
+
+            pClosest(closest, start->rightChild, q, (i+1)%3);
+
+            if ((q->y - start->coords->y)*(q->y - start->coords->y) < closest->data[0].dist){
+                pClosest(closest, start->leftChild, q, (i+1)%3);
+            }
+
+        }
+
+    }
+
+    if (i==2){
+
+        if (q->z < start->coords->z){
+            
+            pClosest(closest, start->leftChild, q, (i+1)%3);
+
+            if ((q->z - start->coords->z)*(q->z - start->coords->z) < closest->data[0].dist){
+                pClosest(closest, start->rightChild, q, (i+1)%3);
+            }
+
+        }
+
+        else{
+
+            pClosest(closest, start->rightChild, q, (i+1)%3);
+
+            if ((q->z - start->coords->z)*(q->z - start->coords->z) < closest->data[0].dist){
+                pClosest(closest, start->leftChild, q, (i+1)%3);
+            }
+
+        }
+
+    }
+
+}
+
+*/
+
+void pClosest(MaxHeap* H, struct Node* node, Point *q, int axis) {
+    if (node == NULL)
+        return;
+
+    // 1. Avståndet till denna nodens punkt
+    float d = distSquared(q, node->coords);
+
+    // 2. Uppdatera heapen korrekt
+    if (H->size < H->capacity) {
+        heap_insert(H, d, node->coords);
+    } else if (d < H->data[0].dist) {
+        heap_insert(H, d, node->coords);
+    }
+
+    // 3. Bestäm vilken sida av planet punkten ligger på
+    float diff;
+    if (axis == 0)
+        diff = q->x - node->coords->x;
+    else if (axis == 1)
+        diff = q->y - node->coords->y;
+    else
+        diff = q->z - node->coords->z;
+
+    struct Node* nearChild  = (diff < 0 ? node->leftChild  : node->rightChild);
+    struct Node* farChild   = (diff < 0 ? node->rightChild : node->leftChild);
+
+    // 4. Utforska närmaste sidan först
+    pClosest(H, nearChild, q, (axis + 1) % 3);
+
+    // 5. Split-check: Behöver vi besöka andra sidan?
+    float diff2 = diff * diff;
+
+    if (H->size < H->capacity || diff2 < H->data[0].dist) {
+        pClosest(H, farChild, q, (axis + 1) % 3);
+    }
 }

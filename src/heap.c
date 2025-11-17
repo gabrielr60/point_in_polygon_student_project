@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include "heap.h"
+#include <stdio.h>
 
 static void heapify_down(MaxHeap *H, int i) {
     int largest = i;
@@ -40,6 +41,7 @@ MaxHeap *heap_create(int capacity) {
     }
     H->size = 0;
     H->capacity = capacity;
+    H->data[0].dist = -1;
     return H;
 }
 
