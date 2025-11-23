@@ -34,7 +34,7 @@ int main() {
     }
 
     double scale = 1; // längden på normala vektorer i plotten
-    FILE *f = fopen("../normals.dat", "w");
+    FILE *f = fopen("../data/normals.dat", "w");
     if (!f) {
         perror("Could not open file");
         return 1;
