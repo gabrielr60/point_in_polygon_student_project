@@ -2,9 +2,9 @@
 #define POINT_H
 
 typedef struct {
-    float x;
-    float y;
-    float z;
+    double x;
+    double y;
+    double z;
 } Point;
 
 static inline float distSquared(Point* p1, Point* p2){

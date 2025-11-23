@@ -41,7 +41,6 @@ MaxHeap *heap_create(int capacity) {
     }
     H->size = 0;
     H->capacity = capacity;
-    H->data[0].dist = -1;
     return H;
 }
 

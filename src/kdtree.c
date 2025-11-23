@@ -184,17 +184,14 @@ void pClosest(MaxHeap* H, struct Node* node, Point *q, int axis) {
     if (node == NULL)
         return;
 
-    // 1. Avståndet till denna nodens punkt
     float d = distSquared(q, node->coords);
 
-    // 2. Uppdatera heapen korrekt
     if (H->size < H->capacity) {
         heap_insert(H, d, node->coords);
     } else if (d < H->data[0].dist) {
         heap_insert(H, d, node->coords);
     }
 
-    // 3. Bestäm vilken sida av planet punkten ligger på
     float diff;
     if (axis == 0)
         diff = q->x - node->coords->x;
@@ -206,10 +203,8 @@ void pClosest(MaxHeap* H, struct Node* node, Point *q, int axis) {
     struct Node* nearChild  = (diff < 0 ? node->leftChild  : node->rightChild);
     struct Node* farChild   = (diff < 0 ? node->rightChild : node->leftChild);
 
-    // 4. Utforska närmaste sidan först
     pClosest(H, nearChild, q, (axis + 1) % 3);
 
-    // 5. Split-check: Behöver vi besöka andra sidan?
     float diff2 = diff * diff;
 
     if (H->size < H->capacity || diff2 < H->data[0].dist) {
