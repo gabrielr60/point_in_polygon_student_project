@@ -1,0 +1,66 @@
+\documentclass[10pt,a4paper,final]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{tikz}
+\author{RYDZ-WULLENS, ROUX}
+\title{Student's project}
+
+
+\begin{document}
+
+
+\begin{titlepage}
+\maketitle
+
+\end{titlepage}
+
+
+\section{Introduction}
+
+Light Detection and Ranging (LiDAR) is a technique for measuring distances using pulses of light. It’s built upon the principle that when a light pulse is directed towards a certain target, the distance to the target is proportional to the time it takes for pulse to reach the target, reflect and return to the emitter. By scanning a 3D structure with these light pulses, a point cloud representing the surface can be constructed. However, LiDAR data is often noisy and may not fully capture the underlying surface, which makes further processing necessary.
+
+One key processing step is finding the nearest neighbors of each point in the cloud. This information allows the local surface geometry to be estimated, enabling the computation of surface normals and the application of smoothing or filtering techniques. Performing a brute-force search for nearest neighbors in a point cloud containing millions or even billions of points comes at an enomrous computational cost. Thus, efficient data structures such as KD-trees are commonly used to greatly reduced this cost.
+
+
+\section{Kd-trees}
+
+
+\subsection{Definition}
+
+Let $K = (V,E)$ be a binary tree. Let $v$ be a node of $K$, $depth(v)$ denote the depth of $v$ in $K$. Let $anc(v) \subset V $ the set of the ancestors of $v$ in the tree. Let $l_c : v \mapsto l_c(v)$ and $r_c : v \mapsto r_c(v)$ the functions that maps a node $v$ to its left (resp. right) child in the tree. Let $val : (v,i) \mapsto A_v(i)$ the fonction that maps $(v,i)$ to the value stored in $v$ along the $i$-th dimension. Let $lst : v \mapsto \left\{w\in V | l_c(v) \in anc(w) \right\}$ and  $rst : v \mapsto  \left\{w\in V | r_c(v) \in anc(w) \right\}$
+
+A KD-tree is defined by the following property.
+
+\begin{equation*}
+    \forall v \in V, \forall w \in anc(v)
+\end{equation*}
+
+\begin{equation*}
+    val(v,depth(w)  \; mod \; k) > val( w, depth(w) \; mod  \; d) \text{ if } \exists w'\in anc(v) \bigcup \{v\} \text{ such that } r_c(w) = w'
+\end{equation*}
+\begin{equation*}
+    val(v,depth(w)  \; mod \; k) < val( w, depth(w) \; mod  \; d) \text{ if } \exists w'\in anc(v) \bigcup \{v\} \text{ such that } l_c(w) = w'
+\end{equation*}
+
+\subsection{Properties}
+
+$\forall v,v' \in V, v \neq v'$ let $w^*$ denote the closest common ancestor. $w^* \in anc(v) \bigcap anc(v'), \forall w \in anc(v) \bigcap anc(v') : depth(w^*) \geq depth(w)$
+
+We have the following : 
+
+$val(v,depth(w^*) \; mod  \; k) - val(v', depth(w^*) \ mod \; k) >0 $ if $v \in rst(w^*)$
+$ val(v,depth(w^*) \; mod  \; k) - val(v', depth(w^*) \ mod \; k) < 0 $ if $v \in lst(w^*) $
+
+\subsection{Motivation}
+
+Kd-trees are a special type of Spatial Data Structure along with spatial hash-tables or K-trees. They allow to efficiently search the nearest neighbor of a point $q$ by going through a binary tree. If the Kd-tree is well balanced, which can be guaranteed using auto-balancing or by inserting the points in a certain order, the time complexity of finding the nearest neighbor is $O(\log N)$. In fact, searching such a point is going through the BST.
+
+\subsection{Finding the nearest neighbor}
+
+
+\end{document}
