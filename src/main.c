@@ -6,13 +6,43 @@
 #include <math.h>
 #include"las_reader.h"
 
+// Function used ot query filenames for more generality
+#include <glob.h>
 
 int main() {
 	
     struct LASFile* las_file = malloc(sizeof(struct LASFile));
 
-    int npoints = 1000;
-    initLASFile(las_file, "../data/2631_1113.las", npoints);
+    int npoints = 1000000;
+
+    glob_t * restrict  pglob = malloc(sizeof(glob_t));    
+
+    char* filepath;
+
+    //Search for LAS files in the data directory
+    //Check if glob had an error/found nothing
+    if(glob("../data/*.las", GLOB_NOSORT, NULL, pglob) != 0)
+    {
+	perror("File not found, the LAS file should be placed in the 'data' directory\n"); 
+    	return 1;
+    }
+    else
+    {
+    	printf("glob : %d matche(s) found, opening the first one :\n", pglob->gl_pathc);
+	//Get the pathname of the first file found
+	filepath = pglob->gl_pathv[0];
+	printf(filepath);
+	printf("\n");
+
+    }
+    
+
+    //Read the LAS File
+    initLASFile(las_file, filepath , npoints);
+    
+    //Free the glob_t structure
+    globfree(pglob);
+
 
     struct Tree* T = initTree();
 
@@ -59,4 +89,5 @@ int main() {
     printf("Normals data written to normals.dat\n");
     return 0;
     
+
 }

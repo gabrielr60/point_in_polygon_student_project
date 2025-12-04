@@ -6,5 +6,5 @@ C_DEFINES =
 
 C_INCLUDES = -I/home/groux/Sorbonne/UE316/Programmation/Projet/github/point_in_polygon_student_project/include
 
-C_FLAGS = -g
+C_FLAGS = 
 

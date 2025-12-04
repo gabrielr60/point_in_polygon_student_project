@@ -68,7 +68,7 @@ int initLASFile(struct LASFile* file, char* path_2_file, long int number_of_poin
     //printf("Point Data Record Length: %u\n", file->pt_data_record_length);
 
     fread(&file->number_of_pts_records, sizeof(file->number_of_pts_records), 1, ptr);
-    //printf("Number of Point Records: %u\n", file->number_of_pts_records);
+    printf("Number of Point Records: %u\n", file->number_of_pts_records);
 
     fread(file->number_of_pts_by_return, sizeof(file->number_of_pts_by_return), 1, ptr);
     //printf("Points by Return: ");
@@ -79,12 +79,12 @@ int initLASFile(struct LASFile* file, char* path_2_file, long int number_of_poin
     fread(&file->x_scale_factor, sizeof(file->x_scale_factor), 1, ptr);
     fread(&file->y_scale_factor, sizeof(file->y_scale_factor), 1, ptr);
     fread(&file->z_scale_factor, sizeof(file->z_scale_factor), 1, ptr);
-    //printf("Scale Factors: X=%f  Y=%f  Z=%f\n",file->x_scale_factor, file->y_scale_factor, file->z_scale_factor);
+    printf("Scale Factors: X=%f  Y=%f  Z=%f\n",file->x_scale_factor, file->y_scale_factor, file->z_scale_factor);
 
     fread(&file->x_offset, sizeof(file->x_offset), 1, ptr);
     fread(&file->y_offset, sizeof(file->y_offset), 1, ptr);
     fread(&file->z_offset, sizeof(file->z_offset), 1, ptr);
-    //printf("Offsets: X=%f  Y=%f  Z=%f\n",file->x_offset, file->y_offset, file->z_offset);
+    printf("Offsets: X=%f  Y=%f  Z=%f\n",file->x_offset, file->y_offset, file->z_offset);
 
     fread(&file->x_max, sizeof(double), 1, ptr);
     fread(&file->x_min, sizeof(double), 1, ptr);
@@ -93,8 +93,8 @@ int initLASFile(struct LASFile* file, char* path_2_file, long int number_of_poin
     fread(&file->z_max, sizeof(double), 1, ptr);
     fread(&file->z_min, sizeof(double), 1, ptr);
 
-    // printf("X Min/Max: %f / %f\n", file->x_min, file->x_max);
-    // printf("Y Min/Max: %f / %f\n", file->y_min, file->y_max);
+    //printf("X Min/Max: %f / %f\n", file->x_min, file->x_max);
+    //printf("Y Min/Max: %f / %f\n", file->y_min, file->y_max);
     //printf("Z Min/Max: %f / %f\n", file->z_min, file->z_max);
 
     /* -----------------------
@@ -114,7 +114,7 @@ int initLASFile(struct LASFile* file, char* path_2_file, long int number_of_poin
         return 1;
     }
 
-    long x_l, y_l, z_l;
+    int32_t x_l, y_l, z_l;
 
     for (unsigned long long i = 0; i < number_of_points; i++){
         Point* point = points + i;
@@ -123,11 +123,12 @@ int initLASFile(struct LASFile* file, char* path_2_file, long int number_of_poin
         fread(&y_l, sizeof(y_l), 1, ptr);
         fread(&z_l, sizeof(z_l), 1, ptr);
 
-        point->x = (double)x_l * file->x_scale_factor + file->x_offset;
-        point->y = (double)y_l * file->y_scale_factor + file->y_offset;
-        point->z = (double)z_l * file->z_scale_factor + file->z_offset;
+        point->x = (double)x_l * (double) file->x_scale_factor + (double) file->x_offset;
+        point->y = (double)y_l * (double) file->y_scale_factor + (double) file->y_offset;
+        point->z = (double)z_l * (double) file->z_scale_factor + (double) file->z_offset;
 
-        //printf("Point %llu: X=%f Y=%f Z=%f\n",i, point->x, point->y, point->z);
+       //printf("Point %llu: X=%f Y=%f Z=%f\n",i, point->x, point->y, point->z);
+
 
         fseek(ptr, file->pt_data_record_length - 12, SEEK_CUR);
     }

@@ -12,6 +12,7 @@ struct Node {
     struct Node *parent;
     struct Node *leftChild;
     struct Node *rightChild;
+    unsigned long int index;
 };
 
 struct Tree {
