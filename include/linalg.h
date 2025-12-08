@@ -3,11 +3,13 @@
 #include <gsl/gsl_matrix.h>
 #include "kdtree.h"
 
-Point* calc_centeroid(MaxHeap* H);
+Point* calc_centeroid(struct Tree* t, MaxHeap* H);
 
-gsl_matrix* create_matrix(MaxHeap* H);
+gsl_matrix* create_matrix(struct Tree* t, MaxHeap* H);
 
-Point* find_normal(MaxHeap* H);
+Point* find_normal(struct Tree* t, MaxHeap* H);
+
+#endif
 
 
 
