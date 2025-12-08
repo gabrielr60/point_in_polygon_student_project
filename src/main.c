@@ -2,92 +2,35 @@
 #include <stdlib.h>
 #include "kdtree.h"
 #include "heap.h"
-#include "linalg.h"
 #include <math.h>
-#include"las_reader.h"
 
-// Function used ot query filenames for more generality
-#include <glob.h>
 
 int main() {
 	
-    struct LASFile* las_file = malloc(sizeof(struct LASFile));
+    Point points[10] = {
+        {1,2,3}, {4,5,6}, {7,8,9}, {2,3,1}, {6,5,4},
+        {9,8,7}, {3,1,2}, {5,6,4}, {8,7,9}, {0,0,0}
+    };
 
-    int npoints = 1000000;
+    struct Tree* t = initTree(10);
 
-    glob_t * restrict  pglob = malloc(sizeof(glob_t));    
-
-    char* filepath;
-
-    //Search for LAS files in the data directory
-    //Check if glob had an error/found nothing
-    if(glob("../data/*.las", GLOB_NOSORT, NULL, pglob) != 0)
-    {
-	perror("File not found, the LAS file should be placed in the 'data' directory\n"); 
-    	return 1;
-    }
-    else
-    {
-    	printf("glob : %d matche(s) found, opening the first one :\n", pglob->gl_pathc);
-	//Get the pathname of the first file found
-	filepath = pglob->gl_pathv[0];
-	printf(filepath);
-	printf("\n");
-
+    for (int i = 0; i<10; i++){
+        t->data[i].coords = points[i];
+        if (i > 0){
+            tree_insert(t, i);
+        }
     }
     
+    MaxHeap* H = heap_create(3);
 
-    //Read the LAS File
-    initLASFile(las_file, filepath , npoints);
+    pClosest(t, H, 0, 3, 0);
+
+    Point p0 = t->data[H->data[0].pointIndex].coords;
+    Point p1 = t->data[H->data[1].pointIndex].coords;
+    Point p2 = t->data[H->data[2].pointIndex].coords;
+
+    printf("%f, %f, %f\n", p0.x, p0.y, p0.z);
+    printf("%f, %f, %f\n", p1.x, p1.y, p1.z);
+    printf("%f, %f, %f\n", p2.x, p2.y, p2.z);
     
-    //Free the glob_t structure
-    globfree(pglob);
-
-
-    struct Tree* T = initTree();
-
-    for (int i = 0; i < npoints ; i++){
-
-        struct Node* newNode = initNode(&las_file->pts[i], NULL, NULL, NULL);
-        tree_insert(T, newNode);
-
-    }
-
-    Point* normals = malloc(sizeof(Point)*npoints);
-
-    for (int i = 0; i < npoints; i++){
-
-        MaxHeap* H = heap_create(7);
-        pClosest(H, T->root, &las_file->pts[i], 0);
-        normals[i] = *find_normal(H);
-
-    }
-
-    double scale = 1; // längden på normala vektorer i plotten
-    FILE *f = fopen("../data/normals.dat", "w");
-    if (!f) {
-        perror("Could not open file");
-        return 1;
-    }
-
-    for (int i = 0; i < npoints; i++) {
-	
-        double x0 = las_file->pts[i].x;
-        double y0 = las_file->pts[i].y;
-        double z0 = las_file->pts[i].z;
-
-        // Kolumner 4-6 = vektorkomponenter, inte slutpunkt
-        double dx = scale * normals[i].x;
-        double dy = scale * normals[i].y;
-        double dz = scale * normals[i].z;
-
-        fprintf(f, "%f %f %f %f %f %f\n", x0, y0, z0, dx, dy, dz);
-    }
-
-    fclose(f);
-
-    printf("Normals data written to normals.dat\n");
-    return 0;
-    
-
 }
