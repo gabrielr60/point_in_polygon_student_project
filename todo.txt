@@ -1,0 +1,11 @@
+Get classification data from .LAS File
+	Modify point structure to include classification data
+Include Meshlab
+	Install Meshlab
+	Check file format compatibility
+Fix normal orientation
+	Think about earth curvature 
+Project report
+	-> Nearest neighbor search algorithm
+	-> Linear regression for planar approximation
+

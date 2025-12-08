@@ -5,6 +5,7 @@ typedef struct {
     double x;
     double y;
     double z;
+    unsigned char class;
 } Point;
 
 static inline float distSquared(Point* p1, Point* p2){

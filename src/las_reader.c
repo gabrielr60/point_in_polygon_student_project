@@ -68,7 +68,7 @@ int initLASFile(struct LASFile* file, char* path_2_file, long int number_of_poin
     //printf("Point Data Record Length: %u\n", file->pt_data_record_length);
 
     fread(&file->number_of_pts_records, sizeof(file->number_of_pts_records), 1, ptr);
-    printf("Number of Point Records: %u\n", file->number_of_pts_records);
+    //printf("Number of Point Records: %u\n", file->number_of_pts_records);
 
     fread(file->number_of_pts_by_return, sizeof(file->number_of_pts_by_return), 1, ptr);
     //printf("Points by Return: ");
@@ -115,6 +115,7 @@ int initLASFile(struct LASFile* file, char* path_2_file, long int number_of_poin
     }
 
     int32_t x_l, y_l, z_l;
+    unsigned char class;
 
     for (unsigned long long i = 0; i < number_of_points; i++){
         Point* point = points + i;
@@ -126,11 +127,16 @@ int initLASFile(struct LASFile* file, char* path_2_file, long int number_of_poin
         point->x = (double)x_l * (double) file->x_scale_factor + (double) file->x_offset;
         point->y = (double)y_l * (double) file->y_scale_factor + (double) file->y_offset;
         point->z = (double)z_l * (double) file->z_scale_factor + (double) file->z_offset;
+	
+	fseek(ptr, 3, SEEK_CUR);
+	fread(&class, sizeof(class), 1, ptr);
 
+	point->class = class; 
+	
        //printf("Point %llu: X=%f Y=%f Z=%f\n",i, point->x, point->y, point->z);
 
 
-        fseek(ptr, file->pt_data_record_length - 12, SEEK_CUR);
+        fseek(ptr, file->pt_data_record_length - 16, SEEK_CUR);
     }
 
     file->pts = points;

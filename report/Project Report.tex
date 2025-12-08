@@ -1,13 +1,18 @@
 \documentclass[10pt,a4paper,final]{article}
 \usepackage[utf8]{inputenc}
-\usepackage[french]{babel}
+\usepackage[english]{babel}
 \usepackage[T1]{fontenc}
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage{graphicx}
 \usepackage{tikz}
-\author{RYDZ-WULLENS, ROUX}
+\usepackage{algopseudocodex}
+\author{
+E.\bsc{Rydz-Wullens}
+\and 
+G.\bsc{RPIX}
+}
 \title{Student's project}
 
 
@@ -62,5 +67,13 @@ Kd-trees are a special type of Spatial Data Structure along with spatial hash-ta
 
 \subsection{Finding the nearest neighbor}
 
+\begin{algorithmic}
+\Require $K =(V,E)$ a Kd-tree
+\Require $q$ a point
+\Require $N > 0$ 
+\State best \gets \Call{d}{q,K->root}
+
+
+\end{algorithmic}
 
 \end{document}
