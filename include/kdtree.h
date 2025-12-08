@@ -7,28 +7,31 @@
 #include "point.h"
 #include "heap.h"
 
+/*
+*implementation of a KD-tree to store points red from LiDAR file.
+*/
+
+/*Nodes in the KD tree storing points and indecees of children*/
 struct Node {
-    Point* coords;
-    struct Node *parent;
-    struct Node *leftChild;
-    struct Node *rightChild;
-    unsigned long int index;
+    Point coords;
+    int leftChildIndex;
+    int rightChildIndex;
 };
 
+/*Structure storing the KD-tree*/
 struct Tree {
-    struct Node *root;
-    int nNodes;
+    struct Node* data; //array of nodes
+    int nNodes; //number of nodes in the tree
+    int capacity; //maxcapacity 
 };
 
-struct Node* initNode(Point* coords,
-              struct Node *p,
-              struct Node *lc,
-              struct Node *rc);
+/*Initialize tree with certain capacity*/
+struct Tree* initTree(int capacity);
 
-struct Tree* initTree(void);
+/*Insert a point in the tree*/
+void tree_insert(struct Tree* t, int newPointIndex);
 
-void tree_insert(struct Tree* t, struct Node* n);
-
-void pClosest(MaxHeap* closest, struct Node* start, Point *q, int i);
+/*Recursive function that fills maxheap with the points closest to qIndex*/
+void pClosest(struct Tree* t, MaxHeap* H, int startIndex, int qIndex, int i);
 
 #endif
