@@ -4,7 +4,7 @@
 #include <gsl/gsl_eigen.h> 
 #include <math.h>
 
-Point* calc_centeroid(MaxHeap* H){
+Point* calc_centeroid(struct Tree* t, MaxHeap* H){
 
     Point* cent = malloc(sizeof(Point));
     cent->x = 0;
@@ -13,9 +13,9 @@ Point* calc_centeroid(MaxHeap* H){
 
     for(int i = 0; i < H->capacity; i++){
 
-        cent->x += H->data[i].pt->x;
-        cent->y += H->data[i].pt->y;
-        cent->z += H->data[i].pt->z;
+        cent->x += t->data[H->data[i].pointIndex].coords.x;
+        cent->y += t->data[H->data[i].pointIndex].coords.y;
+        cent->z += t->data[H->data[i].pointIndex].coords.z;
 
     }
 
@@ -27,17 +27,17 @@ Point* calc_centeroid(MaxHeap* H){
 
 }
 
-gsl_matrix* create_matrix(MaxHeap* H){
+gsl_matrix* create_matrix(struct Tree* t, MaxHeap* H){
 
-    Point* cent = calc_centeroid(H);
+    Point* cent = calc_centeroid(t, H);
 
     gsl_matrix *C = gsl_matrix_calloc(3, 3);
 
     for (int i = 0; i < H->capacity; i++){
 
-        double dx = H->data[i].pt->x - cent->x;
-        double dy = H->data[i].pt->y - cent->y;
-        double dz = H->data[i].pt->z - cent->z;
+        double dx = t->data[H->data[i].pointIndex].coords.x - cent->x;
+        double dy = t->data[H->data[i].pointIndex].coords.y - cent->y;
+        double dz = t->data[H->data[i].pointIndex].coords.z - cent->z;
 
         gsl_matrix_set(C, 0, 0, gsl_matrix_get(C, 0, 0) + dx*dx);
         gsl_matrix_set(C, 0, 1, gsl_matrix_get(C, 0, 1) + dx*dy);
@@ -68,9 +68,9 @@ gsl_matrix* create_matrix(MaxHeap* H){
     return C;
 }
 
-Point* find_normal(MaxHeap* H){
+Point* find_normal(struct Tree* t, MaxHeap* H){
 
-    gsl_matrix* C = create_matrix(H);
+    gsl_matrix* C = create_matrix(t, H);
 
     gsl_vector *eval = gsl_vector_alloc(3);
     gsl_matrix *evec = gsl_matrix_alloc(3,3);
