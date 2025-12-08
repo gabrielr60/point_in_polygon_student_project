@@ -1,213 +1,113 @@
 #include "kdtree.h"
 
-struct Node* initNode(Point* coords, struct Node *p, struct Node *lc, struct Node *rc){
-    
-    struct Node *n = malloc(sizeof(struct Node));
-    if (!n) {
-        fprintf(stderr, "Memory allocation failed for Node\n");
-        exit(EXIT_FAILURE);
-    }
-    n->coords = coords;
-    n->parent = p;
-    n->leftChild = lc;
-    n->rightChild = rc;
-
-    return n;
-}
-
-struct Tree* initTree(){
+/*Initialize KD-tree*/
+struct Tree* initTree(int capacity) {
     struct Tree* t = malloc(sizeof(struct Tree));
-    if (!t) {
-        fprintf(stderr, "Memory allocation failed for Node\n");
-        exit(EXIT_FAILURE);
-    }
-    t->root = NULL;
+    t->data = malloc(sizeof(struct Node) * capacity);
+    t->capacity = capacity;
     t->nNodes = 0;
+
+    //No children at initilization
+    for (int i = 0; i < capacity; i++) {
+        t->data[i].leftChildIndex = -1;
+        t->data[i].rightChildIndex = -1;
+    }
+
     return t;
 }
 
-void tree_insert(struct Tree* t, struct Node* n){
-    struct Node* pos = t->root;
-    if (pos == NULL){
-        t->root = n;
-        t->nNodes++;
-        return;
-    }
-    struct Node* next = pos;
-    int dir = 0;
-    int i = 0;
+/*Insert new point in tree*/
+void tree_insert(struct Tree* t, int newPointIndex){
+    int pos = 0; //start at root
+    int run = 1; //continue down tree until leaf found
+    int axes = 0; //keeps track och axes 
+    int dir = 0; //1 = go to right child, -1 = go to left
 
-    while (next != NULL){
-        pos = next;
-        if (i%3 == 0){
-            if (pos->coords->x > n->coords->x){
-                next = pos->leftChild;
+    while(run){
+        //Go left/right based on if on what side of the splitting plane 
+        if(axes==0){
+            if(t->data[pos].coords.x > t->data[newPointIndex].coords.x){
                 dir = -1;
             }
             else{
-                next = pos->rightChild;
                 dir = 1;
             }
         }
-        else if (i%3 == 1){
-            if (pos->coords->y > n->coords->y){
-                next = pos->leftChild;
+        if(axes==1){
+            if(t->data[pos].coords.y > t->data[newPointIndex].coords.y){
                 dir = -1;
             }
             else{
-                next = pos->rightChild;
                 dir = 1;
+            }
+        }
+        if(axes==2){
+            if(t->data[pos].coords.z > t->data[newPointIndex].coords.z){
+                dir = -1;
+            }
+            else{
+                dir = 1;
+            }
+        }
+
+        //Go to left/right, update position or place new index if child leaf
+        if(dir == -1){
+            if(t->data[pos].leftChildIndex != -1){
+                pos = t->data[pos].leftChildIndex;
+            }
+            else{
+                t->data[pos].leftChildIndex = newPointIndex;
+                run = 0;
             }
         }
         else{
-            if (pos->coords->z > n->coords->z){
-                next = pos->leftChild;
-                dir = -1;
+            if(t->data[pos].rightChildIndex != -1){
+                pos = t->data[pos].rightChildIndex;
             }
             else{
-                next = pos->rightChild;
-                dir = 1;
+                t->data[pos].rightChildIndex = newPointIndex;
+                run = 0;
             }
         }
-        i++;
+        axes = (axes+1)%3; //change axes of comparisson
     }
 
-    n->parent = pos;
-    if (dir == -1){
-        pos->leftChild = n;
-    }
-    if (dir == 1){
-        pos->rightChild = n;
-    }
-
-    t->nNodes++;
-    
-    return;
+    t->nNodes++; //increase number of nodes in tree
 
 }
 
-/*
+/*Fill maxheap with points closest to point q in tree*/
+void pClosest(struct Tree* t, MaxHeap* H, int nodeIndex, int qIndex, int i){
 
-void pClosest(MaxHeap* closest, struct Node* start, Point *q, int i){
-
-    if (start == NULL){
-        return;
-    }
-
-    float d = distSquared(q, start->coords);
-
-    if(closest->size < closest->capacity){
-        heap_insert(closest, d, start->coords);
-    }
-
-    else if(d < closest->data[0].dist){
-        heap_insert(closest, d, start->coords);
-    }
-
-    if (i==0){
-
-        if (q->x < start->coords->x){
-            
-            pClosest(closest, start->leftChild, q, (i+1)%3);
-
-            if ((q->x - start->coords->x)*(q->x - start->coords->x) < closest->data[0].dist){
-                pClosest(closest, start->rightChild, q, (i+1)%3);
-            }
-
-        }
-
-        else{
-
-            pClosest(closest, start->rightChild, q, (i+1)%3);
-
-            if ((q->x - start->coords->x)*(q->x - start->coords->x) < closest->data[0].dist){
-                pClosest(closest, start->leftChild, q, (i+1)%3);
-            }
-
-        }
-
-    }
-
-    if (i==1){
-
-        if (q->y < start->coords->y){
-            
-            pClosest(closest, start->leftChild, q, (i+1)%3);
-
-            if ((q->y - start->coords->y)*(q->y - start->coords->y) < closest->data[0].dist){
-                pClosest(closest, start->rightChild, q, (i+1)%3);
-            }
-
-        }
-
-        else{
-
-            pClosest(closest, start->rightChild, q, (i+1)%3);
-
-            if ((q->y - start->coords->y)*(q->y - start->coords->y) < closest->data[0].dist){
-                pClosest(closest, start->leftChild, q, (i+1)%3);
-            }
-
-        }
-
-    }
-
-    if (i==2){
-
-        if (q->z < start->coords->z){
-            
-            pClosest(closest, start->leftChild, q, (i+1)%3);
-
-            if ((q->z - start->coords->z)*(q->z - start->coords->z) < closest->data[0].dist){
-                pClosest(closest, start->rightChild, q, (i+1)%3);
-            }
-
-        }
-
-        else{
-
-            pClosest(closest, start->rightChild, q, (i+1)%3);
-
-            if ((q->z - start->coords->z)*(q->z - start->coords->z) < closest->data[0].dist){
-                pClosest(closest, start->leftChild, q, (i+1)%3);
-            }
-
-        }
-
-    }
-
-}
-
-*/
-
-void pClosest(MaxHeap* H, struct Node* node, Point *q, int axis) {
-    if (node == NULL)
+    //if subtree empty, dont look for candidates
+    if (nodeIndex == -1)
         return;
 
-    float d = distSquared(q, node->coords);
+    float d = distSquared(t->data[nodeIndex].coords, t->data[qIndex].coords); //calculate distance from nodepoint to q
 
+    //insert in nodepoint if heap not full or if closer then current contenders
     if (H->size < H->capacity) {
-        heap_insert(H, d, node->coords);
+        heap_insert(H, d, nodeIndex);
     } else if (d < H->data[0].dist) {
-        heap_insert(H, d, node->coords);
+        heap_insert(H, d, nodeIndex);
     }
 
     float diff;
-    if (axis == 0)
-        diff = q->x - node->coords->x;
-    else if (axis == 1)
-        diff = q->y - node->coords->y;
+    if (i == 0)
+        diff = t->data[qIndex].coords.x - t->data[nodeIndex].coords.x;
+    else if (i == 1)
+        diff = t->data[qIndex].coords.y - t->data[nodeIndex].coords.y;
     else
-        diff = q->z - node->coords->z;
+        diff = t->data[qIndex].coords.z - t->data[nodeIndex].coords.z;
 
-    struct Node* nearChild  = (diff < 0 ? node->leftChild  : node->rightChild);
-    struct Node* farChild   = (diff < 0 ? node->rightChild : node->leftChild);
+    int nearChild  = (diff < 0 ? t->data[nodeIndex].leftChildIndex  : t->data[nodeIndex].rightChildIndex);
+    int farChild   = (diff >= 0 ? t->data[nodeIndex].leftChildIndex  : t->data[nodeIndex].rightChildIndex);
 
-    pClosest(H, nearChild, q, (axis + 1) % 3);
+    pClosest(t, H, nearChild, qIndex, (i + 1) % 3);
 
     float diff2 = diff * diff;
 
     if (H->size < H->capacity || diff2 < H->data[0].dist) {
-        pClosest(H, farChild, q, (axis + 1) % 3);
+        pClosest(t, H, farChild, qIndex, (i + 1) % 3);
     }
 }
