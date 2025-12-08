@@ -10,10 +10,3 @@ gsl_matrix* create_matrix(struct Tree* t, MaxHeap* H);
 Point* find_normal(struct Tree* t, MaxHeap* H);
 
 #endif
-
-
-
-
-
-
-#endif
