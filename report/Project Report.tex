@@ -7,6 +7,9 @@
 \usepackage{amssymb}
 \usepackage{graphicx}
 \usepackage{tikz}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage[ruled,vlined]{algorithm2e}
 \author{RYDZ-WULLENS, ROUX}
 \title{Student's project}
 
@@ -22,15 +25,18 @@
 
 \section{Introduction}
 
-Light Detection and Ranging (LiDAR) is a technique for measuring distances using pulses of light. It’s built upon the principle that when a light pulse is directed towards a certain target, the distance to the target is proportional to the time it takes for pulse to reach the target, reflect and return to the emitter. By scanning a 3D structure with these light pulses, a point cloud representing the surface can be constructed. However, LiDAR data is often noisy and may not fully capture the underlying surface, which makes further processing necessary.
+Light Detection and Ranging (LiDAR) is a technique for measuring distances using short pulses of light. It's based on the principle that when a pulse is emitted toward a target, the distance to that point is proportional to the time-of-flight of the reflected signal. By scanning an environment in this way, a dense three-dimensional point cloud representing the scanned surface is obtained.
+However, LiDAR measurements are typically noisy and irregularly sampled, which motivates additional processing before the data can be used for visualization, 3D modeling etc.
 
-One key processing step is finding the nearest neighbors of each point in the cloud. This information allows the local surface geometry to be estimated, enabling the computation of surface normals and the application of smoothing or filtering techniques. Performing a brute-force search for nearest neighbors in a point cloud containing millions or even billions of points comes at an enomrous computational cost. Thus, efficient data structures such as KD-trees are commonly used to greatly reduced this cost.
+A fundamental operation in point-cloud processing is the identification of the nearest neighbors of each point. The local neighborhood structure makes it possible to estimate geometric properties of the underlying surface, such as surface normals and enables smoothing etc.
+A naive nearest-neighbor search in a cloud containing millions of points is comes at a heavy computational cost. Efficient spatial data structures such as KD-trees enables much more efficient searching
+
+The goal of this project is to implement KD-tree based LiDAR visualization and analysis, including file reading, KD-tree construction, nearest-neighbor search, and normal estimation. We investigate different implementation choices and evaluate their impact on performance.
+
+\section{Theoretical background}
 
 
-\section{Kd-trees}
-
-
-\subsection{Definition}
+\subsection{Definition of KD-trees}
 
 Let $K = (V,E)$ be a binary tree. Let $v$ be a node of $K$, $depth(v)$ denote the depth of $v$ in $K$. Let $anc(v) \subset V $ the set of the ancestors of $v$ in the tree. Let $l_c : v \mapsto l_c(v)$ and $r_c : v \mapsto r_c(v)$ the functions that maps a node $v$ to its left (resp. right) child in the tree. Let $val : (v,i) \mapsto A_v(i)$ the fonction that maps $(v,i)$ to the value stored in $v$ along the $i$-th dimension. Let $lst : v \mapsto \left\{w\in V | l_c(v) \in anc(w) \right\}$ and  $rst : v \mapsto  \left\{w\in V | r_c(v) \in anc(w) \right\}$
 
@@ -47,7 +53,7 @@ A KD-tree is defined by the following property.
     val(v,depth(w)  \; mod \; k) < val( w, depth(w) \; mod  \; d) \text{ if } \exists w'\in anc(v) \bigcup \{v\} \text{ such that } l_c(w) = w'
 \end{equation*}
 
-\subsection{Properties}
+\subsection{Properties of KD-trees}
 
 $\forall v,v' \in V, v \neq v'$ let $w^*$ denote the closest common ancestor. $w^* \in anc(v) \bigcap anc(v'), \forall w \in anc(v) \bigcap anc(v') : depth(w^*) \geq depth(w)$
 
@@ -56,11 +62,67 @@ We have the following :
 $val(v,depth(w^*) \; mod  \; k) - val(v', depth(w^*) \ mod \; k) >0 $ if $v \in rst(w^*)$
 $ val(v,depth(w^*) \; mod  \; k) - val(v', depth(w^*) \ mod \; k) < 0 $ if $v \in lst(w^*) $
 
-\subsection{Motivation}
-
+\subsection{Motivation of the use of KD-trees for storing LiDAR data}
 Kd-trees are a special type of Spatial Data Structure along with spatial hash-tables or K-trees. They allow to efficiently search the nearest neighbor of a point $q$ by going through a binary tree. If the Kd-tree is well balanced, which can be guaranteed using auto-balancing or by inserting the points in a certain order, the time complexity of finding the nearest neighbor is $O(\log N)$. In fact, searching such a point is going through the BST.
-
 \subsection{Finding the nearest neighbor}
+\section{Code structure}
+\subsection{Reading the LiDAR file}
+The first step of the project is to convert the LiDAR file into an internal data structure suitable for efficient access. Although random access to points directly in the file would in principle be possible, and save memory space, repeatedly decoding individual entries would introduce significant overhead.
+Instead, the entire file is red once, and each point is stored in an array of custom point structures containing the (x,y,z) coordinates.
+\subsection{Building the KD-tree}
+Once the point data has been loaded into memory, a KD-tree is constructed to enable efficient nearest-neighbor search. A possible design is to represent the KD-tree as dynamically allocated nodes containing pointers to their children and to the associated point. While flexible, such pointer-based trees suffer from poor memory locality, which negatively affects performance on large datasets.
+
+To improve cache efficiency, we instead store the KD-tree directly within the array of points. For each point, two integer fields are added to store the indices of the left and right children. This ensures that nodes are stored contiguously in memory, reducing cache misses during traversal. The reduced flexibility in terms of number of points stored is acceptable considering that the number of points is provided explicitly in the LAS file.  
+
+The tree is constructed by inserting points sequentially. For each point, we begin at the root (the first element of the array) and descend the tree by comparing the point to the cutting plane of each encountered node. Whenever a missing child (denoted by index $-1$) is reached, the point is inserted there by updating the respective child index.
+
+\subsection{finding the $k$ closest neighbors}
+The algorithm that searches the kd-tree recursively needs to maintain a set of the current $k$ best candidate points. Each time a new point is considered, we need to determine whether it is closer than the current worst candidate among the $k$ best.
+
+A naïve approach is to store the candidates in an unsorted array. However, checking whether a new point should be included requires finding the worst candidate, which takes
+$O(k)$ time. One may try to keep the worst element at a fixed position in the array but maintaining this invariant also requires $O(k)$ time, but now only every when a new candidate is inserted.
+
+To achieve better performance, a max-heap can be used instead. A max-heap is a data structure stored in an array but conceptually representing a binary tree where each parent node is greater than or equal to its children. In this context, this means that the  worst candidate among the current $k$ neighbors is always stored at the first position in the array. When a new candidate needs to be inserted, the heap performs a reordering operation that restores the heap property in only $O(\log k)$ time. The pseudo code for a function that fills a max heap with the closest neighbors looks as follows, where $axis$ is the gives the orientation of the cutting plane at the current depth, and $q$ the point for which the neighbors are to be found.
+
+\begin{algorithm}[H]
+\caption{Recursive 3D kNN Search in a KD-tree (Euclidean distance)}
+\SetAlgoLined
+\SetKwFunction{kNNsearch}{kNN\_search}
+\SetKwProg{Fn}{Function}{}{}
+\Fn{\kNNsearch{tree, node, q, axis, k\_heap}}{
+    \If{node = NULL}{
+        \Return \tcp*{Base case: empty subtree}
+    }
+    
+    dist $\gets$ distance(q, node.point) \tcp*{Compute distance to q}
+    
+    \If{k\_heap.size $<$ k}{
+        k\_heap.insert((dist, node.point)) \tcp*{Heap not full: insert point}
+    }
+    \ElseIf{dist $<$ k\_heap.max\_distance() }{
+        k\_heap.replace\_max((dist, node.point)) \tcp*{Replace worst candidate if new point is closer}
+    }
+    
+    \If{q[axis] $<$ node.point[axis]}{
+        near\_child $\gets$ node.left\;
+        far\_child  $\gets$ node.right \tcp*{Search subtree closer to q first}
+    }
+    \Else{
+        near\_child $\gets$ node.right\;
+        far\_child  $\gets$ node.left
+    }
+    
+    \kNNsearch{tree, near\_child, q, (axis + 1) mod 3, k\_heap} \tcp*{Recurse into near subtree first}
+    
+    \If{k\_heap.size $<$ k \textbf{or} abs(q[axis] - node.point[axis]) $<$ k\_heap.max\_distance()}{
+        \kNNsearch{tree, far\_child, q, (axis + 1) mod 3, k\_heap} \tcp*{Check far subtree if it could contain closer points}
+    }
+}
+\end{algorithm}
+
+The essence of the algorithm is that we do not need to search the far sub tree if all points in it are guaranteed to be further away than the current best candidates. At the same time, all potential neighbors that could improve the result are considered, which ensures the correctness of the algorithm.
+
+
 
 
 \end{document}
