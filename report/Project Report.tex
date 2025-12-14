@@ -29,7 +29,7 @@ Light Detection and Ranging (LiDAR) is a technique for measuring distances using
 However, LiDAR measurements are typically noisy and irregularly sampled, which motivates additional processing before the data can be used for visualization, 3D modeling etc.
 
 A fundamental operation in point-cloud processing is the identification of the nearest neighbors of each point. The local neighborhood structure makes it possible to estimate geometric properties of the underlying surface, such as surface normals and enables smoothing etc.
-A naive nearest-neighbor search in a cloud containing millions of points is comes at a heavy computational cost. Efficient spatial data structures such as KD-trees enables much more efficient searching
+A naive nearest-neighbor search in a cloud containing millions of points is comes at a heavy computational cost, especially considering that the point cloud often contains millions or even billions of points. Efficient spatial data structures such as KD-trees enables much more efficient searching
 
 The goal of this project is to implement KD-tree based LiDAR visualization and analysis, including file reading, KD-tree construction, nearest-neighbor search, and normal estimation. We investigate different implementation choices and evaluate their impact on performance.
 
@@ -64,11 +64,17 @@ $ val(v,depth(w^*) \; mod  \; k) - val(v', depth(w^*) \ mod \; k) < 0 $ if $v \i
 
 \subsection{Motivation of the use of KD-trees for storing LiDAR data}
 Kd-trees are a special type of Spatial Data Structure along with spatial hash-tables or K-trees. They allow to efficiently search the nearest neighbor of a point $q$ by going through a binary tree. If the Kd-tree is well balanced, which can be guaranteed using auto-balancing or by inserting the points in a certain order, the time complexity of finding the nearest neighbor is $O(\log N)$. In fact, searching such a point is going through the BST.
+
 \subsection{Finding the nearest neighbor}
+
 \section{Code structure}
+\subsection{Program workflow}
+
+The overall structure of the implementation follows a sequence of steps. First, the LiDAR file is read and all points are stored in a contiguous array. Next, a KD-tree is constructed directly within this array to enable efficient nearest-neighbor queries. For each point, the KD-tree is queried to find its k closest neighbors. Finally, a local covariance matrix is assembled from these neighbors, and its eigenvectors are computed to determine the surface normal at the point.
+
 \subsection{Reading the LiDAR file}
-The first step of the project is to convert the LiDAR file into an internal data structure suitable for efficient access. Although random access to points directly in the file would in principle be possible, and save memory space, repeatedly decoding individual entries would introduce significant overhead.
-Instead, the entire file is red once, and each point is stored in an array of custom point structures containing the (x,y,z) coordinates.
+The first step of the project is to convert the LiDAR file into an internal data structure suitable for efficient access. Although the point coordinates could be read directly from the file every time a point's position is needed, repeatedly decoding individual entries would introduce significant overhead, not worth the memory savings.
+Instead, the entire file is read once, and each point is stored in an array of custom point structures containing the (x,y,z) coordinates.
 \subsection{Building the KD-tree}
 Once the point data has been loaded into memory, a KD-tree is constructed to enable efficient nearest-neighbor search. A possible design is to represent the KD-tree as dynamically allocated nodes containing pointers to their children and to the associated point. While flexible, such pointer-based trees suffer from poor memory locality, which negatively affects performance on large datasets.
 
@@ -82,7 +88,9 @@ The algorithm that searches the kd-tree recursively needs to maintain a set of t
 A naïve approach is to store the candidates in an unsorted array. However, checking whether a new point should be included requires finding the worst candidate, which takes
 $O(k)$ time. One may try to keep the worst element at a fixed position in the array but maintaining this invariant also requires $O(k)$ time, but now only every when a new candidate is inserted.
 
-To achieve better performance, a max-heap can be used instead. A max-heap is a data structure stored in an array but conceptually representing a binary tree where each parent node is greater than or equal to its children. In this context, this means that the  worst candidate among the current $k$ neighbors is always stored at the first position in the array. When a new candidate needs to be inserted, the heap performs a reordering operation that restores the heap property in only $O(\log k)$ time. The pseudo code for a function that fills a max heap with the closest neighbors looks as follows, where $axis$ is the gives the orientation of the cutting plane at the current depth, and $q$ the point for which the neighbors are to be found.
+To achieve better performance, a max-heap can be used instead. A max-heap is a data structure stored in an array but conceptually representing a binary tree where each parent node is greater than or equal to its children. In this context, this means that the  worst candidate among the current $k$ neighbors is always stored at the first position in the array. When a new candidate needs to be inserted, the heap performs a reordering operation that restores the heap property in only $O(\log k)$ time.
+
+The pseudo code for a function that fills a max heap with the closest neighbors looks as follows, where $axis$ is the gives the orientation of the cutting plane at the current depth, and $q$ the point for which the neighbors are to be found.
 
 \begin{algorithm}[H]
 \caption{Recursive 3D kNN Search in a KD-tree (Euclidean distance)}
@@ -118,9 +126,14 @@ To achieve better performance, a max-heap can be used instead. A max-heap is a d
         \kNNsearch{tree, far\_child, q, (axis + 1) mod 3, k\_heap} \tcp*{Check far subtree if it could contain closer points}
     }
 }
-\end{algorithm}
+\end{algorithm} 
 
 The essence of the algorithm is that we do not need to search the far sub tree if all points in it are guaranteed to be further away than the current best candidates. At the same time, all potential neighbors that could improve the result are considered, which ensures the correctness of the algorithm.
+
+\subsection{Fining the surface normals}
+For each point, a surface normal is estimated by using its nearest neighbors. Given the $k$ nearest neighbors, a $3\times3$ covariance matrix is constructed. The surface normal is then defined as the eigenvector corresponding to the smallest eigenvalue of this matrix (see ???). The eigenvalue decomposition of the symmetric $3\times3$ matrix is done using GNU Scientific Library (GSL).
+
+Since eigenvectors are only defined up to sign, the computed normals generally point in inconsistent directions across the point cloud. To obtain a consistent orientation, a neighborhood graph is constructed where edges connect nearby points. Starting from a reference point, the orientation of the neighboring normals are flipped when necessary, such that the neighboring normals point in the same general direction. This is then repeated for the neighborhoods of the points just treated, until the orientation of the normals are coherent over the entire surface.
 
 
 
